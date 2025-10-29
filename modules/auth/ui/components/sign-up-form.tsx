@@ -6,14 +6,15 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-import { OctagonAlertIcon } from 'lucide-react'
+import { EyeIcon, EyeOffIcon, OctagonAlertIcon } from 'lucide-react'
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 
 import { authClient } from '@/lib/auth-client'
 
-import { SignUpData, signUpSchema } from '@/modules/auth/schemas'
+import { signUpSchema } from '@/modules/auth/schemas'
+import type { SignUpData } from '@/modules/auth/types'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -38,11 +39,10 @@ const SignUpForm = () => {
   const form = useForm<SignUpData>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
-      email: '',
-      password: '',
       name: '',
-      last_name: '',
-      username: ''
+      username: '',
+      email: '',
+      password: ''
     }
   })
 
@@ -52,11 +52,10 @@ const SignUpForm = () => {
 
     await authClient.signUp.email(
       {
+        name: data.name,
+        username: data.username,
         email: data.email,
         password: data.password,
-        name: data.name,
-        last_name: data.last_name,
-        username: data.username,
         callbackURL: '/posts'
       },
       {
@@ -66,6 +65,30 @@ const SignUpForm = () => {
         onSuccess: () => {
           setIsLoading(false)
           router.push('/posts')
+        },
+        onError: ctx => {
+          setIsLoading(false)
+          setErrorMessage(ctx.error.message)
+        }
+      }
+    )
+  }
+
+  const onSocial = async (provider: 'github' | 'google') => {
+    setIsLoading(true)
+    setErrorMessage(null)
+
+    await authClient.signIn.social(
+      {
+        provider,
+        callbackURL: '/posts'
+      },
+      {
+        onRequest: () => {
+          setIsLoading(true)
+        },
+        onSuccess: () => {
+          setIsLoading(false)
         },
         onError: ctx => {
           setIsLoading(false)
@@ -90,47 +113,25 @@ const SignUpForm = () => {
           </Alert>
         )}
 
-        <div className='grid grid-cols-2 gap-4'>
-          <FormField
-            control={form.control}
-            name='name'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nombre</FormLabel>
-                <FormControl>
-                  <Input
-                    autoFocus
-                    type='text'
-                    placeholder='Nombre'
-                    disabled={isLoading}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name='last_name'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Apellido</FormLabel>
-                <FormControl>
-                  <Input
-                    autoFocus
-                    type='text'
-                    placeholder='Apellido'
-                    disabled={isLoading}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name='name'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nombre completo</FormLabel>
+              <FormControl>
+                <Input
+                  autoFocus
+                  type='text'
+                  placeholder='Juan Pérez'
+                  disabled={isLoading}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
@@ -140,9 +141,8 @@ const SignUpForm = () => {
               <FormLabel>Nombre de usuario</FormLabel>
               <FormControl>
                 <Input
-                  autoFocus
                   type='text'
-                  placeholder='Nombre de usuario'
+                  placeholder='juanperez'
                   disabled={isLoading}
                   {...field}
                 />
@@ -179,13 +179,30 @@ const SignUpForm = () => {
             <FormItem>
               <FormLabel>Contraseña</FormLabel>
               <FormControl>
-                <Input
-                  autoFocus
-                  type='password'
-                  placeholder='Contraseña'
-                  disabled={isLoading}
-                  {...field}
-                />
+                <div className='relative'>
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder='Contraseña'
+                    disabled={isLoading}
+                    {...field}
+                  />
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='sm'
+                    className='absolute top-0 right-0 h-full px-3 py-2 outline-none hover:bg-transparent!'
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={
+                      showPassword ? 'Hide password' : 'Show password'
+                    }
+                  >
+                    {showPassword ? (
+                      <EyeOffIcon className='h-4 w-4' />
+                    ) : (
+                      <EyeIcon className='h-4 w-4' />
+                    )}
+                  </Button>
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -212,7 +229,7 @@ const SignUpForm = () => {
             variant='outline'
             type='button'
             disabled={isLoading}
-            onClick={() => {}}
+            onClick={() => onSocial('google')}
           >
             <Image src='/google.svg' alt='Google Logo' width={16} height={16} />
             <span className='font-semibold'>Google</span>
@@ -221,7 +238,7 @@ const SignUpForm = () => {
             variant='outline'
             type='button'
             disabled={isLoading}
-            onClick={() => {}}
+            onClick={() => onSocial('github')}
           >
             <Image src='/github.svg' alt='GitHub Logo' width={16} height={16} />
             <span className='font-semibold'>GitHub</span>

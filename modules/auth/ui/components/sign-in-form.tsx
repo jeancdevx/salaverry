@@ -12,8 +12,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 
 import { authClient } from '@/lib/auth-client'
+import { cn } from '@/lib/utils'
 
-import { SignInData, signInSchema } from '@/modules/auth/schemas'
+import { signInSchema } from '@/modules/auth/schemas'
+import type { SignInData } from '@/modules/auth/types'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -60,6 +62,30 @@ const SignInForm = () => {
         onSuccess: () => {
           setIsLoading(false)
           router.push('/posts')
+        },
+        onError: ctx => {
+          setIsLoading(false)
+          setErrorMessage(ctx.error.message)
+        }
+      }
+    )
+  }
+
+  const onSocial = async (provider: 'github' | 'google') => {
+    setIsLoading(true)
+    setErrorMessage(null)
+
+    await authClient.signIn.social(
+      {
+        provider,
+        callbackURL: '/posts'
+      },
+      {
+        onRequest: () => {
+          setIsLoading(true)
+        },
+        onSuccess: () => {
+          setIsLoading(false)
         },
         onError: ctx => {
           setIsLoading(false)
@@ -161,7 +187,7 @@ const SignInForm = () => {
             variant='outline'
             type='button'
             disabled={isLoading}
-            onClick={() => {}}
+            onClick={() => onSocial('google')}
           >
             <Image src='/google.svg' alt='Google Logo' width={16} height={16} />
             <span className='font-semibold'>Google</span>
@@ -170,7 +196,7 @@ const SignInForm = () => {
             variant='outline'
             type='button'
             disabled={isLoading}
-            onClick={() => {}}
+            onClick={() => onSocial('github')}
           >
             <Image src='/github.svg' alt='GitHub Logo' width={16} height={16} />
             <span className='font-semibold'>GitHub</span>
@@ -179,7 +205,13 @@ const SignInForm = () => {
 
         <div className='text-muted-foreground text-center text-xs'>
           ¿No tienes una cuenta?{' '}
-          <Link href='/sign-up' className='font-semibold text-teal-600'>
+          <Link
+            href='/sign-up'
+            className={cn(
+              'font-semibold text-teal-600',
+              isLoading && 'pointer-events-none opacity-50'
+            )}
+          >
             Regístrate
           </Link>
         </div>

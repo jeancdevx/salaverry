@@ -6,7 +6,7 @@ import Autoplay from 'embla-carousel-autoplay'
 
 import { cn } from '@/lib/utils'
 
-import TextType from '@/components/text-type'
+import TextType from '@/components/reactbits/text-type'
 import {
   Carousel,
   CarouselContent,

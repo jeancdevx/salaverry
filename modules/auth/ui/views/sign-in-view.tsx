@@ -6,10 +6,10 @@ import { Card, CardContent } from '@/components/ui/card'
 
 import { CarouselForm } from '../components/carousel-form'
 
-const SignInView = () => {
+const SignInView = async () => {
   return (
     <>
-      <Card className='bg-card/30 relative z-10 mx-auto max-w-5xl backdrop-blur-3xl'>
+      <Card className='bg-card/30 relative z-10 mx-auto mt-4 max-w-5xl backdrop-blur-3xl md:mt-8'>
         <CardContent className='grid grid-cols-1 items-center gap-4 px-6 md:grid-cols-2 md:gap-8'>
           <div className='relative flex w-full flex-col items-start gap-y-6'>
             <div className='flex w-full flex-col items-center gap-y-3'>

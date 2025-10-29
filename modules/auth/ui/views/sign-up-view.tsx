@@ -5,10 +5,10 @@ import { SignUpForm } from '@/modules/auth/ui/components/sign-up-form'
 
 import { Card, CardContent } from '@/components/ui/card'
 
-const SignUpView = () => {
+const SignUpView = async () => {
   return (
     <>
-      <Card className='bg-card/30 relative z-10 mx-auto max-w-5xl backdrop-blur-3xl'>
+      <Card className='bg-card/30 relative z-10 mx-auto mt-4 max-w-5xl backdrop-blur-3xl md:mt-8'>
         <CardContent className='grid grid-cols-1 items-center gap-4 px-6 md:grid-cols-2 md:gap-8'>
           <div className='relative flex w-full flex-col items-start gap-y-6'>
             <div className='flex w-full flex-col items-center gap-y-3'>
@@ -28,7 +28,7 @@ const SignUpView = () => {
         </CardContent>
       </Card>
 
-      <div className='text-muted-foreground [&_a]:hover:text-primary text-center text-xs font-medium text-balance'>
+      <div className='text-muted-foreground [&_a]:hover:text-primary mb-4 text-center text-xs font-medium text-balance md:mb-8'>
         <p>Al hacer clic en &quot;Iniciar sesión&quot;, aceptas nuestros</p>
         <p>
           <a href='/terms' target='_blank' rel='noreferrer'>

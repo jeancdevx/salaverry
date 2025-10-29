@@ -9,6 +9,7 @@ import { comment, post, reaction, user } from '@/db/schema'
 
 import { POST_STATUS, POSTS_PER_PAGE } from '../constants'
 import type { PostWithAuthor } from '../types'
+import { formatPostDate, getInitials } from './utils'
 
 /**
  * Obtiene todos los posts publicados con información del autor
@@ -73,7 +74,10 @@ export const getPublishedPosts = cache(
       _count: {
         reactions: p.reactionsCount,
         comments: p.commentsCount
-      }
+      },
+      // Datos formateados en el servidor
+      formattedDate: formatPostDate(p.publishedAt),
+      authorInitials: getInitials(p.author.name || 'Anónimo')
     }))
   }
 )
@@ -141,7 +145,10 @@ export const getPostBySlug = cache(
       _count: {
         reactions: p.reactionsCount,
         comments: p.commentsCount
-      }
+      },
+      // Datos formateados en el servidor
+      formattedDate: formatPostDate(p.publishedAt),
+      authorInitials: getInitials(p.author.name || 'Anónimo')
     }
   }
 )
@@ -199,5 +206,9 @@ export const getPostComments = cache(async (postId: string) => {
     .where(eq(comment.postId, postId))
     .orderBy(desc(comment.createdAt))
 
-  return comments
+  return comments.map(c => ({
+    ...c,
+    formattedDate: formatPostDate(c.createdAt),
+    authorInitials: getInitials(c.author.name || 'Anónimo')
+  }))
 })

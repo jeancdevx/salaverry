@@ -18,6 +18,9 @@ export type PostWithAuthor = Post & {
     reactions: number
     comments: number
   }
+  // Datos formateados en el servidor
+  formattedDate?: string
+  authorInitials?: string
 }
 
 export type CommentWithAuthor = Comment & {
@@ -25,4 +28,7 @@ export type CommentWithAuthor = Comment & {
     typeof user.$inferSelect,
     'id' | 'name' | 'email' | 'image' | 'username'
   >
+  // Datos formateados en el servidor
+  formattedDate?: string
+  authorInitials?: string
 }

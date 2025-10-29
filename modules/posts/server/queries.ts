@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { cache } from 'react'
+import { unstable_cache } from 'next/cache'
 
 import { and, count, desc, eq } from 'drizzle-orm'
 
@@ -11,10 +11,7 @@ import { POST_STATUS, POSTS_PER_PAGE } from '../constants'
 import type { PostWithAuthor } from '../types'
 import { formatPostDate, getInitials } from './utils'
 
-/**
- * Obtiene todos los posts publicados con información del autor
- */
-export const getPublishedPosts = cache(
+export const getPublishedPosts = unstable_cache(
   async (page = 1): Promise<PostWithAuthor[]> => {
     const offset = (page - 1) * POSTS_PER_PAGE
 
@@ -75,17 +72,15 @@ export const getPublishedPosts = cache(
         reactions: p.reactionsCount,
         comments: p.commentsCount
       },
-      // Datos formateados en el servidor
       formattedDate: formatPostDate(p.publishedAt),
       authorInitials: getInitials(p.author.name || 'Anónimo')
     }))
-  }
+  },
+  ['posts'],
+  { tags: ['posts'], revalidate: 60 }
 )
 
-/**
- * Obtiene un post por su slug con información del autor
- */
-export const getPostBySlug = cache(
+export const getPostBySlug = unstable_cache(
   async (slug: string): Promise<PostWithAuthor | null> => {
     const result = await db
       .select({
@@ -146,29 +141,28 @@ export const getPostBySlug = cache(
         reactions: p.reactionsCount,
         comments: p.commentsCount
       },
-      // Datos formateados en el servidor
       formattedDate: formatPostDate(p.publishedAt),
       authorInitials: getInitials(p.author.name || 'Anónimo')
     }
-  }
+  },
+  ['post-by-slug'],
+  { tags: ['posts'], revalidate: 60 }
 )
 
-/**
- * Obtiene el total de posts publicados
- */
-export const getPublishedPostsCount = cache(async (): Promise<number> => {
-  const result = await db
-    .select({ count: count() })
-    .from(post)
-    .where(eq(post.status, POST_STATUS.PUBLISHED))
+export const getPublishedPostsCount = unstable_cache(
+  async (): Promise<number> => {
+    const result = await db
+      .select({ count: count() })
+      .from(post)
+      .where(eq(post.status, POST_STATUS.PUBLISHED))
 
-  return result[0]?.count ?? 0
-})
+    return result[0]?.count ?? 0
+  },
+  ['posts-count'],
+  { tags: ['posts'], revalidate: 60 }
+)
 
-/**
- * Verifica si el usuario actual ha reaccionado a un post
- */
-export const hasUserReactedToPost = cache(
+export const hasUserReactedToPost = unstable_cache(
   async (postId: string, userId: string): Promise<boolean> => {
     const result = await db
       .select({ id: reaction.id })
@@ -177,38 +171,41 @@ export const hasUserReactedToPost = cache(
       .limit(1)
 
     return result.length > 0
-  }
+  },
+  ['user-reaction'],
+  { tags: ['posts'] }
 )
 
-/**
- * Obtiene los comentarios de un post con información del autor
- */
-export const getPostComments = cache(async (postId: string) => {
-  const comments = await db
-    .select({
-      id: comment.id,
-      content: comment.content,
-      userId: comment.userId,
-      postId: comment.postId,
-      parentId: comment.parentId,
-      createdAt: comment.createdAt,
-      updatedAt: comment.updatedAt,
-      author: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        image: user.image,
-        username: user.username
-      }
-    })
-    .from(comment)
-    .innerJoin(user, eq(comment.userId, user.id))
-    .where(eq(comment.postId, postId))
-    .orderBy(desc(comment.createdAt))
+export const getPostComments = unstable_cache(
+  async (postId: string) => {
+    const comments = await db
+      .select({
+        id: comment.id,
+        content: comment.content,
+        userId: comment.userId,
+        postId: comment.postId,
+        parentId: comment.parentId,
+        createdAt: comment.createdAt,
+        updatedAt: comment.updatedAt,
+        author: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+          username: user.username
+        }
+      })
+      .from(comment)
+      .innerJoin(user, eq(comment.userId, user.id))
+      .where(eq(comment.postId, postId))
+      .orderBy(desc(comment.createdAt))
 
-  return comments.map(c => ({
-    ...c,
-    formattedDate: formatPostDate(c.createdAt),
-    authorInitials: getInitials(c.author.name || 'Anónimo')
-  }))
-})
+    return comments.map(c => ({
+      ...c,
+      formattedDate: formatPostDate(c.createdAt),
+      authorInitials: getInitials(c.author.name || 'Anónimo')
+    }))
+  },
+  ['post-comments'],
+  { tags: ['posts'], revalidate: 30 }
+)

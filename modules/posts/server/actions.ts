@@ -9,16 +9,12 @@ import { comment, reaction } from '@/db/schema'
 import { getCurrentUser } from '@/lib/dal'
 
 import { createCommentSchema, updateCommentSchema } from '../schemas'
-import type { InsertComment, InsertReaction } from '../types'
+import type { InsertComment } from '../types'
 
-/**
- * Crear o eliminar reacción en un post
- */
-export async function toggleReaction(postId: string) {
+export async function toggleReaction(postId: string, postSlug: string) {
   try {
     const user = await getCurrentUser()
 
-    // Verificar si ya existe la reacción
     const existingReaction = await db
       .select()
       .from(reaction)
@@ -26,34 +22,28 @@ export async function toggleReaction(postId: string) {
       .limit(1)
 
     if (existingReaction.length > 0) {
-      // Eliminar reacción
-      await db
-        .delete(reaction)
-        .where(and(eq(reaction.postId, postId), eq(reaction.userId, user.id)))
-
-      revalidatePath('/posts')
-      return { success: true, action: 'removed' }
+      await db.delete(reaction).where(eq(reaction.id, existingReaction[0].id))
     } else {
-      // Crear reacción
-      const newReaction: InsertReaction = {
+      await db.insert(reaction).values({
+        id: crypto.randomUUID(),
+        userId: user.id,
         postId,
-        userId: user.id
-      }
-
-      await db.insert(reaction).values(newReaction)
-
-      revalidatePath('/posts')
-      return { success: true, action: 'added' }
+        createdAt: new Date()
+      })
     }
+
+    // Revalidar la página específica del post
+    revalidatePath(`/posts/${postSlug}`)
+    // También revalidar el listado
+    revalidatePath('/posts')
+
+    return { success: true }
   } catch (error) {
     console.error('Error toggling reaction:', error)
     return { success: false, error: 'Error al procesar la reacción' }
   }
 }
 
-/**
- * Crear un comentario en un post
- */
 export async function createComment(data: {
   content: string
   postId: string
@@ -81,16 +71,12 @@ export async function createComment(data: {
   }
 }
 
-/**
- * Actualizar un comentario
- */
 export async function updateComment(commentId: string, content: string) {
   try {
     const user = await getCurrentUser()
 
     const validatedData = updateCommentSchema.parse({ content })
 
-    // Verificar que el comentario pertenece al usuario
     const existingComment = await db
       .select()
       .from(comment)
@@ -121,14 +107,10 @@ export async function updateComment(commentId: string, content: string) {
   }
 }
 
-/**
- * Eliminar un comentario
- */
 export async function deleteComment(commentId: string) {
   try {
     const user = await getCurrentUser()
 
-    // Verificar que el comentario pertenece al usuario
     const existingComment = await db
       .select()
       .from(comment)

@@ -21,7 +21,11 @@ import {
 import { Skeleton } from './ui/skeleton'
 
 export const UserButtonSkeleton = () => {
-  return <Skeleton className='h-10 w-10 rounded-full' />
+  return (
+    <div className='flex w-[107px] items-end justify-end'>
+      <Skeleton className='h-10 w-10 rounded-full' />
+    </div>
+  )
 }
 
 export const UserButton = () => {
@@ -39,7 +43,7 @@ export const UserButton = () => {
     })
   }
 
-  if (isPending || !session?.user) return null
+  if (isPending || !session?.user) return <UserButtonSkeleton />
 
   return (
     <DropdownMenu>
@@ -64,7 +68,7 @@ export const UserButton = () => {
           </Button>
         </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className='w-56' align='start'>
+      <DropdownMenuContent className='w-56' align='end'>
         <DropdownMenuLabel className='font-normal'>
           <div className='flex flex-col space-y-1'>
             <p className='text-sm leading-none font-medium capitalize'>

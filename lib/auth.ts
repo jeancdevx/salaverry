@@ -38,7 +38,6 @@ export const auth = betterAuth({
   plugins: [
     username(),
     adminPlugin({
-      adminUserIds: [''],
       ac,
       roles: {
         admin,

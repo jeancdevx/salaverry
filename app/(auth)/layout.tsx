@@ -1,4 +1,4 @@
-import LightRays from '@/components/light-rays'
+import LightRays from '@/components/reactbits/light-rays'
 
 interface AuthLayoutProps {
   children: React.ReactNode
@@ -6,7 +6,7 @@ interface AuthLayoutProps {
 
 export default function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <div className='mx-auto flex min-h-svh max-w-7xl flex-col items-center justify-center gap-y-6 px-4 py-4 md:px-8 md:py-8'>
+    <>
       <div className='absolute -z-10 min-h-svh w-full overflow-hidden'>
         <LightRays
           raysOrigin='top-center'
@@ -22,7 +22,9 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
         />
       </div>
 
-      {children}
-    </div>
+      <div className='mx-auto flex min-h-svh max-w-7xl flex-col items-center justify-center gap-y-6 px-4 md:px-8'>
+        {children}
+      </div>
+    </>
   )
 }

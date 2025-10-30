@@ -48,6 +48,7 @@ export async function createComment(data: {
   content: string
   postId: string
   parentId?: string
+  postSlug?: string
 }) {
   try {
     const user = await getCurrentUser()
@@ -63,7 +64,12 @@ export async function createComment(data: {
 
     await db.insert(comment).values(newComment)
 
+    // Revalidar tanto el listado como la página específica del post
     revalidatePath('/posts')
+    if (data.postSlug) {
+      revalidatePath(`/posts/${data.postSlug}`)
+    }
+
     return { success: true }
   } catch (error) {
     console.error('Error creating comment:', error)
@@ -71,7 +77,11 @@ export async function createComment(data: {
   }
 }
 
-export async function updateComment(commentId: string, content: string) {
+export async function updateComment(
+  commentId: string,
+  content: string,
+  postSlug?: string
+) {
   try {
     const user = await getCurrentUser()
 
@@ -100,6 +110,10 @@ export async function updateComment(commentId: string, content: string) {
       .where(eq(comment.id, commentId))
 
     revalidatePath('/posts')
+    if (postSlug) {
+      revalidatePath(`/posts/${postSlug}`)
+    }
+
     return { success: true }
   } catch (error) {
     console.error('Error updating comment:', error)
@@ -107,7 +121,7 @@ export async function updateComment(commentId: string, content: string) {
   }
 }
 
-export async function deleteComment(commentId: string) {
+export async function deleteComment(commentId: string, postSlug?: string) {
   try {
     const user = await getCurrentUser()
 
@@ -131,6 +145,10 @@ export async function deleteComment(commentId: string) {
     await db.delete(comment).where(eq(comment.id, commentId))
 
     revalidatePath('/posts')
+    if (postSlug) {
+      revalidatePath(`/posts/${postSlug}`)
+    }
+
     return { success: true }
   } catch (error) {
     console.error('Error deleting comment:', error)

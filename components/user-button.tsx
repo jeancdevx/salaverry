@@ -43,7 +43,15 @@ export const UserButton = () => {
     })
   }
 
-  if (isPending || !session?.user) return <UserButtonSkeleton />
+  if (isPending) return <UserButtonSkeleton />
+
+  if (!session) {
+    return (
+      <Link href='/sign-in'>
+        <Button variant='ghost'>Iniciar Sesión</Button>
+      </Link>
+    )
+  }
 
   return (
     <DropdownMenu>
@@ -54,17 +62,17 @@ export const UserButton = () => {
             size='icon-lg'
             className='relative h-10 w-10 rounded-full'
           >
-            {session.user.image ? (
-              <Avatar>
+            <Avatar>
+              {session.user.image ? (
                 <AvatarImage src={session.user.image} alt={session.user.name} />
-              </Avatar>
-            ) : (
-              <GeneratedAvatar
-                seed={session.user.name}
-                variant='botttsNeutral'
-                className='mr-3 size-9'
-              />
-            )}
+              ) : (
+                <GeneratedAvatar
+                  seed={session.user.name}
+                  variant='botttsNeutral'
+                  className='size-10'
+                />
+              )}
+            </Avatar>
           </Button>
         </div>
       </DropdownMenuTrigger>

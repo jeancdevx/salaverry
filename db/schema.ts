@@ -1,6 +1,7 @@
 import {
   boolean,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   unique,
@@ -81,9 +82,10 @@ export const post = pgTable('post', {
   excerpt: text('excerpt'),
   content: text('content').notNull(),
   coverImage: text('cover_image').notNull(),
-  authorId: text('author_id')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
+  authorId: text('author_id').references(() => user.id, {
+    onDelete: 'set null'
+  }),
+  isAnonymous: boolean('is_anonymous').notNull().default(false),
   status: text('status', { enum: ['draft', 'published'] })
     .notNull()
     .default('draft'),
@@ -94,6 +96,26 @@ export const post = pgTable('post', {
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull()
 })
+
+// Tabla para múltiples autores (colaboración)
+export const postAuthor = pgTable(
+  'post_author',
+  {
+    postId: uuid('post_id')
+      .notNull()
+      .references(() => post.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    role: text('role', { enum: ['primary', 'contributor'] })
+      .notNull()
+      .default('contributor'),
+    createdAt: timestamp('created_at').defaultNow().notNull()
+  },
+  table => ({
+    pk: primaryKey({ columns: [table.postId, table.userId] })
+  })
+)
 
 export const reaction = pgTable(
   'reaction',
@@ -128,3 +150,19 @@ export const comment = pgTable('comment', {
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull()
 })
+
+// Export types
+export type SelectUser = typeof user.$inferSelect
+export type InsertUser = typeof user.$inferInsert
+
+export type SelectPost = typeof post.$inferSelect
+export type InsertPost = typeof post.$inferInsert
+
+export type SelectPostAuthor = typeof postAuthor.$inferSelect
+export type InsertPostAuthor = typeof postAuthor.$inferInsert
+
+export type SelectComment = typeof comment.$inferSelect
+export type InsertComment = typeof comment.$inferInsert
+
+export type SelectReaction = typeof reaction.$inferSelect
+export type InsertReaction = typeof reaction.$inferInsert

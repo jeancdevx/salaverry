@@ -17,6 +17,7 @@ import {
 import { getPostBySlug, getPostComments } from '@/modules/posts/server/queries'
 import { CommentsList, PostInteractions } from '@/modules/posts/ui/components'
 
+import { MarkdownContent } from '@/components/markdown-content'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Breadcrumb,
@@ -120,14 +121,103 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
         </h1>
 
         <div className='flex items-center gap-4'>
-          <Avatar className='border-border h-12 w-12 border-2'>
-            {post.author.image ? (
-              <AvatarImage src={post.author.image} alt={authorName} />
-            ) : null}
-            <AvatarFallback>{post.authorInitials}</AvatarFallback>
-          </Avatar>
+          {/* Authors Section */}
+          <div className='flex items-center'>
+            {post.isAnonymous ? (
+              <Avatar className='border-border h-12 w-12 border-2'>
+                <AvatarFallback>AN</AvatarFallback>
+              </Avatar>
+            ) : (
+              <div className='flex items-center -space-x-3'>
+                {/* Primary Author */}
+                <Avatar className='border-background ring-background h-12 w-12 border-2 ring-2'>
+                  {post.author?.image ? (
+                    <>
+                      <AvatarImage src={post.author.image} alt={authorName} />
+                      <AvatarFallback>{post.authorInitials}</AvatarFallback>
+                    </>
+                  ) : (
+                    <AvatarFallback>{post.authorInitials}</AvatarFallback>
+                  )}
+                </Avatar>
+
+                {/* Co-Authors */}
+                {post.coAuthors &&
+                  post.coAuthors.slice(0, 3).map(coAuthor => {
+                    const coAuthorName =
+                      coAuthor.name || coAuthor.username || 'Anónimo'
+                    const coAuthorInitials = coAuthor.name
+                      ? coAuthor.name
+                          .split(' ')
+                          .map(n => n[0])
+                          .join('')
+                          .toUpperCase()
+                          .slice(0, 2)
+                      : coAuthor.username
+                        ? coAuthor.username.slice(0, 2).toUpperCase()
+                        : 'CO'
+
+                    return (
+                      <Avatar
+                        key={coAuthor.id}
+                        className='border-background ring-background h-12 w-12 border-2 ring-2'
+                      >
+                        {coAuthor.image ? (
+                          <>
+                            <AvatarImage
+                              src={coAuthor.image}
+                              alt={coAuthorName}
+                            />
+                            <AvatarFallback>{coAuthorInitials}</AvatarFallback>
+                          </>
+                        ) : (
+                          <AvatarFallback>{coAuthorInitials}</AvatarFallback>
+                        )}
+                      </Avatar>
+                    )
+                  })}
+
+                {/* Show +N if there are more than 3 co-authors */}
+                {post.coAuthors && post.coAuthors.length > 3 && (
+                  <Avatar className='border-background ring-background h-12 w-12 border-2 ring-2'>
+                    <AvatarFallback className='bg-muted text-muted-foreground text-xs'>
+                      +{post.coAuthors.length - 3}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+              </div>
+            )}
+          </div>
+
           <div>
-            <p className='text-foreground font-medium'>{authorName}</p>
+            <p className='text-foreground font-medium'>
+              {post.isAnonymous ? (
+                'Anónimo'
+              ) : (
+                <>
+                  {authorName}
+                  {post.coAuthors && post.coAuthors.length > 0 && (
+                    <>
+                      <span className='text-muted-foreground font-normal'>
+                        {' '}
+                        y{' '}
+                      </span>
+                      {post.coAuthors.length === 1 ? (
+                        <span>
+                          {post.coAuthors[0].name ||
+                            post.coAuthors[0].username ||
+                            'Anónimo'}
+                        </span>
+                      ) : (
+                        <span className='text-muted-foreground font-normal'>
+                          {post.coAuthors.length} colaboradores
+                        </span>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+            </p>
             <p className='text-muted-foreground text-sm'>
               {post.formattedDate}
             </p>
@@ -162,9 +252,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
       <Separator className='my-8' />
 
       <div className='prose prose-lg dark:prose-invert mx-auto max-w-none'>
-        <div className='text-foreground leading-relaxed whitespace-pre-wrap'>
-          {post.content}
-        </div>
+        <MarkdownContent content={post.content} />
       </div>
 
       <Separator className='my-12' />

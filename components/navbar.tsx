@@ -11,26 +11,31 @@ type NavLink = {
 }
 
 const navLinks: NavLink[] = [
-  { href: '/posts', label: 'Posts' },
-  { href: '/trending', label: 'Tendencias' },
-  { href: '/about', label: 'Sobre Nosotros' }
+  { href: '/', label: 'Inicio' },
+  { href: '/posts', label: 'Blog' },
+  { href: '/about', label: 'Nosotros' }
 ]
 
 const Navbar = () => {
   const pathname = usePathname()
 
   return (
-    <nav className='hidden flex-1 items-center justify-center gap-x-6 text-sm md:flex'>
+    <nav className='hidden flex-1 items-center justify-center gap-x-8 text-sm md:flex'>
       {navLinks.map(link => (
         <Link
           key={link.href}
           href={link.href}
           className={cn(
-            'text-muted-foreground hover:text-foreground font-medium transition-colors',
-            pathname === link.href && 'text-teal-600 dark:text-teal-400'
+            'relative font-medium transition-colors',
+            pathname === link.href
+              ? 'text-teal-500'
+              : 'text-muted-foreground hover:text-foreground'
           )}
         >
           {link.label}
+          {pathname === link.href && (
+            <span className='absolute -bottom-[22px] left-0 h-0.5 w-full bg-teal-500' />
+          )}
         </Link>
       ))}
     </nav>

@@ -1,17 +1,26 @@
+import { Suspense } from 'react'
+
 import Image from 'next/image'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { Heart, MessageCircle } from 'lucide-react'
 
-import { getCurrentUser } from '@/lib/dal'
+import { getCurrentUserOptional } from '@/lib/dal'
 
-import {
-  getPostBySlug,
-  getPostComments,
-  hasUserReactedToPost
-} from '@/modules/posts/server/queries'
+import { toggleReaction } from '@/modules/posts/server/actions'
+import { getPostBySlug, getPostComments } from '@/modules/posts/server/queries'
+import { PostInteractions } from '@/modules/posts/ui/components'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator
+} from '@/components/ui/breadcrumb'
 import { Separator } from '@/components/ui/separator'
 
 interface PostDetailPageProps {
@@ -19,6 +28,9 @@ interface PostDetailPageProps {
     slug: string
   }>
 }
+
+// Configurar para generación estática con revalidación
+export const revalidate = 60 // Revalidar cada 60 segundos
 
 export default async function PostDetailPage({ params }: PostDetailPageProps) {
   const { slug } = await params
@@ -28,17 +40,14 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
     notFound()
   }
 
-  // Obtener usuario actual (si está autenticado)
-  let currentUser = null
-  let hasReacted = false
+  const currentUser = await getCurrentUserOptional()
 
-  try {
-    currentUser = await getCurrentUser()
-    if (currentUser) {
-      hasReacted = await hasUserReactedToPost(post.id, currentUser.id)
-    }
-  } catch {
-    // Usuario no autenticado
+  async function handleToggleLike(formData: FormData) {
+    'use server'
+
+    const postId = formData.get('postId') as string
+    const postSlug = formData.get('postSlug') as string
+    await toggleReaction(postId, postSlug)
   }
 
   const comments = await getPostComments(post.id)
@@ -46,7 +55,26 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
   return (
     <article className='mx-auto max-w-4xl px-4 py-12'>
-      {/* Cover Image */}
+      <Breadcrumb className='mb-6'>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href='/'>Inicio</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href='/posts'>Blog</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{post.title}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
       <div className='relative mb-8 aspect-video overflow-hidden rounded-3xl'>
         <Image
           src={post.coverImage}
@@ -58,13 +86,11 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
         />
       </div>
 
-      {/* Header */}
       <header className='mb-8'>
         <h1 className='mb-6 text-4xl leading-tight font-bold tracking-tight sm:text-5xl md:text-6xl'>
           {post.title}
         </h1>
 
-        {/* Author Info */}
         <div className='flex items-center gap-4'>
           <Avatar className='border-border h-12 w-12 border-2'>
             <AvatarImage
@@ -81,24 +107,33 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className='text-muted-foreground mt-6 flex items-center gap-6 text-sm'>
-          <div className='flex items-center gap-2'>
-            <Heart
-              className={`h-5 w-5 ${hasReacted ? 'fill-red-500 text-red-500' : ''}`}
-            />
-            <span>{post._count?.reactions ?? 0} reacciones</span>
-          </div>
-          <div className='flex items-center gap-2'>
-            <MessageCircle className='h-5 w-5' />
-            <span>{post._count?.comments ?? 0} comentarios</span>
-          </div>
-        </div>
+        <Suspense
+          fallback={
+            <div className='text-muted-foreground mt-6 flex items-center gap-6 text-sm'>
+              <div className='flex items-center gap-2'>
+                <Heart className='h-5 w-5' />
+                <span>{post._count?.reactions ?? 0}</span>
+              </div>
+              <div className='flex items-center gap-2'>
+                <MessageCircle className='h-5 w-5' />
+                <span>{post._count?.comments ?? 0} comentarios</span>
+              </div>
+            </div>
+          }
+        >
+          <PostInteractions
+            postId={post.id}
+            postSlug={post.slug}
+            userId={currentUser?.id}
+            initialReactionsCount={post._count?.reactions ?? 0}
+            commentsCount={post._count?.comments ?? 0}
+            toggleAction={handleToggleLike}
+          />
+        </Suspense>
       </header>
 
       <Separator className='my-8' />
 
-      {/* Content */}
       <div className='prose prose-lg dark:prose-invert mx-auto max-w-none'>
         <div className='text-foreground leading-relaxed whitespace-pre-wrap'>
           {post.content}
@@ -107,7 +142,6 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
       <Separator className='my-12' />
 
-      {/* Comments Section */}
       <section className='mt-12'>
         <h2 className='mb-6 text-2xl font-bold'>
           Comentarios ({comments.length})

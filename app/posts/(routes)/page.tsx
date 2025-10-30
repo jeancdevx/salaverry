@@ -1,12 +1,38 @@
-import { getPublishedPosts } from '@/modules/posts/server/queries'
-import { PostList } from '@/modules/posts/ui/components'
+import { Suspense } from 'react'
+
+import Link from 'next/link'
+
+import { PostListSkeleton, PostsFeed } from '@/modules/posts/ui/components'
+
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator
+} from '@/components/ui/breadcrumb'
+
+// Configurar ISR con revalidación
+export const revalidate = 60 // Revalidar cada 60 segundos
 
 export default async function PostsPage() {
-  const posts = await getPublishedPosts()
-
   return (
     <div className='container mx-auto px-4 py-12'>
-      {/* Header */}
+      <Breadcrumb className='mb-6'>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href='/'>Inicio</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>Blog</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
       <div className='mb-12 text-center'>
         <h1 className='mb-4 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl'>
           Blog Playa de Salaverry
@@ -17,8 +43,9 @@ export default async function PostsPage() {
         </p>
       </div>
 
-      {/* Posts Grid */}
-      <PostList posts={posts} />
+      <Suspense fallback={<PostListSkeleton />}>
+        <PostsFeed />
+      </Suspense>
     </div>
   )
 }

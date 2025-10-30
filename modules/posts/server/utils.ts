@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { format } from 'date-fns'
+import { format, formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 /**
@@ -18,7 +18,7 @@ export function formatPostDate(date: Date | null | undefined): string {
 export function formatRelativeDate(date: Date | null | undefined): string {
   if (!date) return ''
 
-  return format(date, 'PPP', { locale: es })
+  return formatDistanceToNow(date, { addSuffix: true, locale: es })
 }
 
 /**

@@ -14,6 +14,12 @@ export type PostWithAuthor = Post & {
     typeof user.$inferSelect,
     'id' | 'name' | 'email' | 'image' | 'username'
   >
+  coAuthors?: Array<
+    Pick<
+      typeof user.$inferSelect,
+      'id' | 'name' | 'email' | 'image' | 'username'
+    >
+  >
   _count?: {
     reactions: number
     comments: number

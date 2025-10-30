@@ -5,11 +5,30 @@ import { unstable_cache } from 'next/cache'
 import { and, count, desc, eq, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { comment, post, reaction, user } from '@/db/schema'
+import { comment, post, postAuthor, reaction, user } from '@/db/schema'
 
 import { POST_STATUS, POSTS_PER_PAGE } from '../constants'
 import type { PostWithAuthor } from '../types'
 import { formatPostDate, formatRelativeDate, getInitials } from './utils'
+
+/**
+ * Get co-authors for a post with full user details
+ */
+async function getPostCoAuthorsWithDetails(postId: string) {
+  const coAuthors = await db
+    .select({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      username: user.username
+    })
+    .from(postAuthor)
+    .innerJoin(user, eq(postAuthor.userId, user.id))
+    .where(eq(postAuthor.postId, postId))
+
+  return coAuthors
+}
 
 export const getPublishedPosts = unstable_cache(
   async (page = 1): Promise<PostWithAuthor[]> => {
@@ -24,6 +43,7 @@ export const getPublishedPosts = unstable_cache(
         content: post.content,
         coverImage: post.coverImage,
         authorId: post.authorId,
+        isAnonymous: post.isAnonymous,
         status: post.status,
         publishedAt: post.publishedAt,
         createdAt: post.createdAt,
@@ -63,6 +83,7 @@ export const getPublishedPosts = unstable_cache(
       content: p.content,
       coverImage: p.coverImage,
       authorId: p.authorId,
+      isAnonymous: p.isAnonymous,
       status: p.status as 'draft' | 'published',
       publishedAt: p.publishedAt,
       createdAt: p.createdAt,
@@ -91,6 +112,7 @@ export const getPostBySlug = unstable_cache(
         content: post.content,
         coverImage: post.coverImage,
         authorId: post.authorId,
+        isAnonymous: post.isAnonymous,
         status: post.status,
         publishedAt: post.publishedAt,
         createdAt: post.createdAt,
@@ -123,6 +145,7 @@ export const getPostBySlug = unstable_cache(
     if (result.length === 0) return null
 
     const p = result[0]
+    const coAuthors = await getPostCoAuthorsWithDetails(p.id)
 
     return {
       id: p.id,
@@ -132,11 +155,13 @@ export const getPostBySlug = unstable_cache(
       content: p.content,
       coverImage: p.coverImage,
       authorId: p.authorId,
+      isAnonymous: p.isAnonymous,
       status: p.status as 'draft' | 'published',
       publishedAt: p.publishedAt,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
       author: p.author,
+      coAuthors: coAuthors.length > 0 ? coAuthors : undefined,
       _count: {
         reactions: p.reactionsCount,
         comments: p.commentsCount

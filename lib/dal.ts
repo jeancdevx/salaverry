@@ -28,3 +28,18 @@ export const isAdminUser = cache(async () => {
 
   return session.user.role === 'admin'
 })
+
+// Versiones opcionales que no redirigen (para contenido público)
+export const getSessionOptional = cache(async () => {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
+
+  return session
+})
+
+export const getCurrentUserOptional = cache(async () => {
+  const session = await getSessionOptional()
+
+  return session?.user ?? null
+})

@@ -21,7 +21,11 @@ import {
 import { Skeleton } from './ui/skeleton'
 
 export const UserButtonSkeleton = () => {
-  return <Skeleton className='h-10 w-10 rounded-full' />
+  return (
+    <div className='flex w-[107px] items-end justify-end'>
+      <Skeleton className='h-10 w-10 rounded-full' />
+    </div>
+  )
 }
 
 export const UserButton = () => {
@@ -39,7 +43,15 @@ export const UserButton = () => {
     })
   }
 
-  if (isPending || !session?.user) return null
+  if (isPending) return <UserButtonSkeleton />
+
+  if (!session) {
+    return (
+      <Link href='/sign-in'>
+        <Button variant='ghost'>Iniciar Sesión</Button>
+      </Link>
+    )
+  }
 
   return (
     <DropdownMenu>
@@ -50,21 +62,21 @@ export const UserButton = () => {
             size='icon-lg'
             className='relative h-10 w-10 rounded-full'
           >
-            {session.user.image ? (
-              <Avatar>
+            <Avatar>
+              {session.user.image ? (
                 <AvatarImage src={session.user.image} alt={session.user.name} />
-              </Avatar>
-            ) : (
-              <GeneratedAvatar
-                seed={session.user.name}
-                variant='botttsNeutral'
-                className='mr-3 size-9'
-              />
-            )}
+              ) : (
+                <GeneratedAvatar
+                  seed={session.user.name}
+                  variant='botttsNeutral'
+                  className='size-10'
+                />
+              )}
+            </Avatar>
           </Button>
         </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className='w-56' align='start'>
+      <DropdownMenuContent className='w-56' align='end'>
         <DropdownMenuLabel className='font-normal'>
           <div className='flex flex-col space-y-1'>
             <p className='text-sm leading-none font-medium capitalize'>

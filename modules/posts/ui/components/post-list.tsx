@@ -1,3 +1,7 @@
+'use client'
+
+import { ViewTransition } from 'react'
+
 import type { PostWithAuthor } from '@/modules/posts/types'
 
 import { PostCard } from './post-card'
@@ -27,15 +31,19 @@ export function PostList({ posts }: PostListProps) {
   return (
     <div className='space-y-8'>
       {featuredPost && (
-        <div className='mb-12'>
-          <PostCard post={featuredPost} featured />
-        </div>
+        <ViewTransition enter='scale-up'>
+          <div className='mb-12'>
+            <PostCard post={featuredPost} featured />
+          </div>
+        </ViewTransition>
       )}
 
       {remainingPosts.length > 0 && (
         <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
           {remainingPosts.map(post => (
-            <PostCard key={post.id} post={post} />
+            <ViewTransition key={post.id} enter='slide-up'>
+              <PostCard post={post} />
+            </ViewTransition>
           ))}
         </div>
       )}

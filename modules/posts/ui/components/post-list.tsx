@@ -22,11 +22,23 @@ export function PostList({ posts }: PostListProps) {
     )
   }
 
+  const [featuredPost, ...remainingPosts] = posts
+
   return (
-    <div className='grid gap-8 sm:grid-cols-2 lg:grid-cols-3'>
-      {posts.map(post => (
-        <PostCard key={post.id} post={post} />
-      ))}
+    <div className='space-y-8'>
+      {featuredPost && (
+        <div className='mb-12'>
+          <PostCard post={featuredPost} featured />
+        </div>
+      )}
+
+      {remainingPosts.length > 0 && (
+        <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+          {remainingPosts.map(post => (
+            <PostCard key={post.id} post={post} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

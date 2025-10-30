@@ -2,14 +2,14 @@ import 'server-only'
 
 import { unstable_cache } from 'next/cache'
 
-import { and, count, desc, eq } from 'drizzle-orm'
+import { and, count, desc, eq, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { comment, post, reaction, user } from '@/db/schema'
 
 import { POST_STATUS, POSTS_PER_PAGE } from '../constants'
 import type { PostWithAuthor } from '../types'
-import { formatPostDate, getInitials } from './utils'
+import { formatPostDate, formatRelativeDate, getInitials } from './utils'
 
 export const getPublishedPosts = unstable_cache(
   async (page = 1): Promise<PostWithAuthor[]> => {
@@ -35,8 +35,8 @@ export const getPublishedPosts = unstable_cache(
           image: user.image,
           username: user.username
         },
-        reactionsCount: count(reaction.id),
-        commentsCount: count(comment.id)
+        reactionsCount: count(sql`DISTINCT ${reaction.id}`),
+        commentsCount: count(sql`DISTINCT ${comment.id}`)
       })
       .from(post)
       .innerJoin(user, eq(post.authorId, user.id))
@@ -102,8 +102,8 @@ export const getPostBySlug = unstable_cache(
           image: user.image,
           username: user.username
         },
-        reactionsCount: count(reaction.id),
-        commentsCount: count(comment.id)
+        reactionsCount: count(sql`DISTINCT ${reaction.id}`),
+        commentsCount: count(sql`DISTINCT ${comment.id}`)
       })
       .from(post)
       .innerJoin(user, eq(post.authorId, user.id))
@@ -202,7 +202,7 @@ export const getPostComments = unstable_cache(
 
     return comments.map(c => ({
       ...c,
-      formattedDate: formatPostDate(c.createdAt),
+      formattedDate: formatRelativeDate(c.createdAt),
       authorInitials: getInitials(c.author.name || 'Anónimo')
     }))
   },

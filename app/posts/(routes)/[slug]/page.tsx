@@ -8,9 +8,14 @@ import { Heart, MessageCircle } from 'lucide-react'
 
 import { getCurrentUserOptional } from '@/lib/dal'
 
-import { toggleReaction } from '@/modules/posts/server/actions'
+import {
+  createComment,
+  deleteComment,
+  toggleReaction,
+  updateComment
+} from '@/modules/posts/server/actions'
 import { getPostBySlug, getPostComments } from '@/modules/posts/server/queries'
-import { PostInteractions } from '@/modules/posts/ui/components'
+import { CommentsList, PostInteractions } from '@/modules/posts/ui/components'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -41,13 +46,36 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
   }
 
   const currentUser = await getCurrentUserOptional()
+  const postSlug = post.slug
 
   async function handleToggleLike(formData: FormData) {
     'use server'
 
     const postId = formData.get('postId') as string
-    const postSlug = formData.get('postSlug') as string
-    await toggleReaction(postId, postSlug)
+    const slug = formData.get('postSlug') as string
+    await toggleReaction(postId, slug)
+  }
+
+  async function handleCreateComment(formData: FormData) {
+    'use server'
+
+    const content = formData.get('content') as string
+    const postId = formData.get('postId') as string
+    const slug = formData.get('postSlug') as string
+
+    return await createComment({ content, postId, postSlug: slug })
+  }
+
+  async function handleUpdateComment(commentId: string, content: string) {
+    'use server'
+
+    await updateComment(commentId, content, postSlug)
+  }
+
+  async function handleDeleteComment(commentId: string) {
+    'use server'
+
+    await deleteComment(commentId, postSlug)
   }
 
   const comments = await getPostComments(post.id)
@@ -93,10 +121,9 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
         <div className='flex items-center gap-4'>
           <Avatar className='border-border h-12 w-12 border-2'>
-            <AvatarImage
-              src={post.author.image ?? undefined}
-              alt={authorName}
-            />
+            {post.author.image ? (
+              <AvatarImage src={post.author.image} alt={authorName} />
+            ) : null}
             <AvatarFallback>{post.authorInitials}</AvatarFallback>
           </Avatar>
           <div>
@@ -142,44 +169,15 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
       <Separator className='my-12' />
 
-      <section className='mt-12'>
-        <h2 className='mb-6 text-2xl font-bold'>
-          Comentarios ({comments.length})
-        </h2>
-
-        {comments.length === 0 ? (
-          <p className='text-muted-foreground py-8 text-center'>
-            Aún no hay comentarios. ¡Sé el primero en comentar!
-          </p>
-        ) : (
-          <div className='space-y-6'>
-            {comments.map(comment => (
-              <div key={comment.id} className='flex gap-4'>
-                <Avatar className='border-border h-10 w-10 border-2'>
-                  <AvatarImage
-                    src={comment.author.image ?? undefined}
-                    alt={comment.author.name || 'Anónimo'}
-                  />
-                  <AvatarFallback className='text-xs'>
-                    {comment.authorInitials}
-                  </AvatarFallback>
-                </Avatar>
-                <div className='flex-1'>
-                  <div className='bg-muted/50 rounded-2xl p-4'>
-                    <p className='mb-1 text-sm font-medium'>
-                      {comment.author.name || 'Anónimo'}
-                    </p>
-                    <p className='text-foreground'>{comment.content}</p>
-                  </div>
-                  <p className='text-muted-foreground mt-2 ml-4 text-xs'>
-                    {comment.formattedDate}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      <CommentsList
+        comments={comments}
+        postId={post.id}
+        postSlug={post.slug}
+        currentUserId={currentUser?.id}
+        createAction={handleCreateComment}
+        updateAction={handleUpdateComment}
+        deleteAction={handleDeleteComment}
+      />
     </article>
   )
 }
